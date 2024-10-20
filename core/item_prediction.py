@@ -22,15 +22,10 @@ from numba_pokemon_prngs.xorshift import Xoroshiro128PlusRejection
 
 from .range_widget import RangeWidget
 
-# TODO: support other item tables
 AREAS = {
-    "Cerulean Cave Balls": (
-        (50, "Poke Ball"),
-        (100, "Great Ball"),
-        (125, "Ultra Ball"),
-        (1, "Master Ball"),
-        (25, "10 Ultra Balls"),
-    )
+    "Cerulean Cave Master Ball": (301, 275),
+    "Game Corner Golden Bottle Cap": (100, 0),
+    "Game Corner Silver Bottle Cap": (100, 1),
 }
 
 
@@ -52,8 +47,7 @@ class ItemPredictionTab(QWidget):
             self.state_1_input.setText(f"{rng.state[1]:016X}")
         test_rng_menu = Xoroshiro128PlusRejection(0)
         test_rng_item = Xoroshiro128PlusRejection(0)
-        item_table = AREAS[self.area_selector.currentText()]
-        item_sum = sum(item[0] for item in item_table)
+        item_sum, item_target = AREAS[self.area_selector.currentText()]
         advance_range = self.advance_range.get_range()
         rng.advance(advance_range.start)
         self.results.setRowCount(0)
@@ -63,12 +57,7 @@ class ItemPredictionTab(QWidget):
             for menu_open in range(self.max_menu_opens.value()):
                 test_rng_item.re_init(test_rng_menu.state[0], test_rng_menu.state[1])
                 item_rand = test_rng_item.next_rand(item_sum)
-                for item in item_table:
-                    if item_rand < item[0]:
-                        break
-                    item_rand -= item[0]
-                # TODO: specific filtering
-                if item[1] == "Master Ball":
+                if item_rand == item_target:
                     row_i = self.results.rowCount()
                     self.results.insertRow(row_i)
                     row = (
@@ -122,7 +111,7 @@ class ItemPredictionTab(QWidget):
         self.results = QTableWidget()
         self.results.setColumnCount(3)
         self.results.setHorizontalHeaderLabels(
-            ["Advance", "Menus until Master Ball", "Rand(2)"]
+            ["Advance", "Menus until target item", "Rand(2)"]
         )
         self.results.verticalHeader().setVisible(False)
         header = self.results.horizontalHeader()
